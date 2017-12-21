@@ -1,0 +1,10 @@
+processors/MMTokenizerLemmatizer.class
+processors/MMKeywordMatcher.class
+processors/MMTokenizerLemmatizer$1.class
+processors/MMKeywordMatcher$1.class
+processors/MMTokenizerLemmatizer$1$1.class
+processors/MMKeywordMatcher$1$1.class
+test/OpenNLPTest.class
+test/TwitterHBCTest.class
+processors/MMTwitterSource.class
+processors/MMTwitterSource$1.class
