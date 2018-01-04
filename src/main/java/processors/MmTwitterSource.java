@@ -1,7 +1,17 @@
 package processors;
 
+import com.twitter.hbc.ClientBuilder;
+import com.twitter.hbc.core.Constants;
+import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
+import com.twitter.hbc.core.processor.StringDelimitedProcessor;
+import com.twitter.hbc.httpclient.BasicClient;
+import com.twitter.hbc.httpclient.auth.Authentication;
+import com.twitter.hbc.httpclient.auth.OAuth1;
+import com.twitter.hbc.twitter4j.parser.JSONObjectParser;
+
 import java.io.IOException;
 import java.io.OutputStream;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,39 +37,33 @@ import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.OutputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
-import com.twitter.hbc.ClientBuilder;
-import com.twitter.hbc.core.Constants;
-import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
-import com.twitter.hbc.core.processor.StringDelimitedProcessor;
-import com.twitter.hbc.httpclient.BasicClient;
-import com.twitter.hbc.httpclient.auth.Authentication;
-import com.twitter.hbc.httpclient.auth.OAuth1;
 
 /**
  * A processor for retrieving tweets from specific users.
  */
 @InputRequirement(Requirement.INPUT_FORBIDDEN)
-@Tags({"twitter", "retrieve", "MM"})
+@Tags({"twitter", "retrieve", "source", "MM"})
 @CapabilityDescription("This processor retrieves tweets from specific users.")
-public class MMTwitterSource extends AbstractProcessor {
+public class MmTwitterSource extends AbstractProcessor {
 
     /** Processor property. */
-    public static final PropertyDescriptor USER_IDS = new PropertyDescriptor.Builder()
-            .name("Twitter user IDs")
-            .description("Specifies comma-separated relevant Twitter users/accounts we are interested in.")
-            .defaultValue("119367092")
-            .required(true)
-            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
-            .build();
+    public static final PropertyDescriptor USER_IDS =
+            new PropertyDescriptor.Builder().name("Twitter user IDs")
+                    .description(
+                            "Specifies comma-separated relevant Twitter users/accounts.")
+                    .defaultValue("119367092").required(true)
+                    .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+                    .build();
 
     /** Relationship "Success". */
     public static final Relationship REL_SUCCESS = new Relationship.Builder()
             .name("success")
-            .description("This is where flow files are sent if the processor execution went well.")
+            .description(
+                    "This is where flow files are sent if the processor execution went well.")
             .build();
 
     /** List of processor properties. */
@@ -68,7 +72,7 @@ public class MMTwitterSource extends AbstractProcessor {
     /** List of processor relationships. */
     private Set<Relationship> relationships;
 
-    /** A cliebt to connect to Twitter. */
+    /** A client to connect to Twitter. */
     private BasicClient client;
 
     /**
@@ -81,7 +85,8 @@ public class MMTwitterSource extends AbstractProcessor {
         procRels.add(REL_SUCCESS);
         setRelationships(Collections.unmodifiableSet(procRels));
 
-        final List<PropertyDescriptor> supDescriptors = new ArrayList<PropertyDescriptor>();
+        final List<PropertyDescriptor> supDescriptors =
+                new ArrayList<PropertyDescriptor>();
         supDescriptors.add(USER_IDS);
         setProperties(Collections.unmodifiableList(supDescriptors));
 
@@ -93,8 +98,8 @@ public class MMTwitterSource extends AbstractProcessor {
      * {@inheritDoc}
      */
     @Override
-    public void onTrigger(final ProcessContext aContext, final ProcessSession aSession)
-            throws ProcessException {
+    public void onTrigger(final ProcessContext aContext,
+            final ProcessSession aSession) throws ProcessException {
 
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
         StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
@@ -104,7 +109,8 @@ public class MMTwitterSource extends AbstractProcessor {
         if (!stringIds.trim().isEmpty()) {
 
             List<String> ids = Arrays.asList(stringIds.split(","));
-            List<Long> longIds = ids.stream().map(Long::parseLong).collect(Collectors.toList());
+            List<Long> longIds = ids.stream().map(Long::parseLong)
+                    .collect(Collectors.toList());
             endpoint.followings(longIds);
         }
 
@@ -116,13 +122,10 @@ public class MMTwitterSource extends AbstractProcessor {
 
         // Create a new BasicClient. By default gzip is enabled.
         if (null == client) {
-            client = new ClientBuilder()
-                    .hosts(Constants.STREAM_HOST)
-                    .endpoint(endpoint)
-                    .connectionTimeout(60000)
+            client = new ClientBuilder().hosts(Constants.STREAM_HOST)
+                    .endpoint(endpoint).connectionTimeout(60000)
                     .authentication(auth)
-                    .processor(new StringDelimitedProcessor(queue))
-                    .build();
+                    .processor(new StringDelimitedProcessor(queue)).build();
             // Establish a connection
             client.connect();
             getLogger().info("Client created and connected");
@@ -131,33 +134,44 @@ public class MMTwitterSource extends AbstractProcessor {
             getLogger().info("Client reconnected");
         }
 
-        //while (true) {
-        //String msg;
         try {
-            String msg = queue.take();
+            while (true) {
 
-            getLogger().info(msg);
+                String msg = queue.take();
 
-            JSONParser jsonParser = new JSONParser();
-            JSONObject jsonObject = (JSONObject) jsonParser.parse(msg);
-            // get a String from the JSON object
+                getLogger().info(msg);
 
-            if (!jsonObject.containsKey("delete")) { //this is not to deal with deleted tweets
+                final JSONObjectParser parser = new JSONObjectParser(); // Gson..createParser(new
+                                                                        // StringReader
 
-                String text = (String) jsonObject.get("text");
+                JSONParser jsonParser = new JSONParser();
+                JSONObject jsonObject = (JSONObject) jsonParser.parse(msg);
+                // get a String from the JSON object
 
-                getLogger().info(text);
+                // ignore deleted tweets
+                if (!jsonObject.containsKey("delete")) {
 
-                FlowFile flowFile = aSession.create();
-                flowFile = aSession.write(flowFile, new OutputStreamCallback() {
+                    String text = (String) jsonObject.get("text");
+                    // String user = (String) jsonObject.get("user").;
 
-                    @Override
-                    public void process(final OutputStream aStream) throws IOException {
+                    getLogger().info(text);
 
-                        aStream.write(text.getBytes());
-                    }
-                });
-                aSession.transfer(flowFile, REL_SUCCESS);
+                    FlowFile flowFile = aSession.create();
+                    flowFile = aSession.write(flowFile,
+                            new OutputStreamCallback() {
+
+                                @Override
+                                public void process(final OutputStream aStream)
+                                        throws IOException {
+
+                                    aStream.write(text.getBytes());
+                                }
+                            });
+                    aSession.putAttribute(flowFile, "TwitterAccount", text);
+                    // aSession.putAttribute(flowFile, "Tweet", user);
+                    aSession.transfer(flowFile, REL_SUCCESS);
+                    aSession.commit();
+                }
             }
         } catch (InterruptedException e) {
             getLogger().error(e.getMessage());
@@ -167,7 +181,8 @@ public class MMTwitterSource extends AbstractProcessor {
             client.stop();
             getLogger().info("Stopped the connection");
         }
-        //client.stop();
+
+        // client.stop();
     }
 
     /**
@@ -203,7 +218,6 @@ public class MMTwitterSource extends AbstractProcessor {
     public List<PropertyDescriptor> getProperties() {
         return properties;
     }
-
 
     /**
      * Setter.

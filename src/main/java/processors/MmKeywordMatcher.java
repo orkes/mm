@@ -1,8 +1,11 @@
 package processors;
 
+import com.google.gson.Gson;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
@@ -27,20 +31,19 @@ import org.apache.nifi.processor.io.InputStreamCallback;
 import org.apache.nifi.processor.io.OutputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
 
-import com.google.gson.Gson;
-
 /**
  * A keyword matcher class.
  */
 @InputRequirement(Requirement.INPUT_REQUIRED)
 @Tags({"MM", "keyword", "match"})
 @CapabilityDescription("This processor matches keywords in tweets.")
-public class MMKeywordMatcher extends AbstractProcessor {
+public class MmKeywordMatcher extends AbstractProcessor {
 
     /** Relationship "Success". */
     public static final Relationship REL_SUCCESS = new Relationship.Builder()
             .name("success")
-            .description("This is where flow files are sent if the processor execution went well.")
+            .description(
+                    "This is where flow files are sent if the processor execution went well.")
             .build();
 
     /** List of processor properties. */
@@ -50,13 +53,12 @@ public class MMKeywordMatcher extends AbstractProcessor {
     private Set<Relationship> relationships;
 
     /** Processor property. */
-    public static final PropertyDescriptor KEYWORDS = new PropertyDescriptor.Builder()
-            .name("Key words")
-            .description("Specifies comma-separated key words to be matched.")
-            .defaultValue("test")
-            .required(true)
-            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
-            .build();
+    public static final PropertyDescriptor KEYWORDS =
+            new PropertyDescriptor.Builder().name("Key words").description(
+                    "Specifies comma-separated key words to be matched.")
+                    .defaultValue("test").required(true)
+                    .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+                    .build();
 
     /**
      * {@inheritDoc}
@@ -68,7 +70,8 @@ public class MMKeywordMatcher extends AbstractProcessor {
         procRels.add(REL_SUCCESS);
         setRelationships(Collections.unmodifiableSet(procRels));
 
-        final List<PropertyDescriptor> supDescriptors = new ArrayList<PropertyDescriptor>();
+        final List<PropertyDescriptor> supDescriptors =
+                new ArrayList<PropertyDescriptor>();
         supDescriptors.add(KEYWORDS);
         setProperties(Collections.unmodifiableList(supDescriptors));
 
@@ -80,8 +83,8 @@ public class MMKeywordMatcher extends AbstractProcessor {
      * {@inheritDoc}
      */
     @Override
-    public void onTrigger(final ProcessContext aContext, final ProcessSession aSession)
-            throws ProcessException {
+    public void onTrigger(final ProcessContext aContext,
+            final ProcessSession aSession) throws ProcessException {
 
         FlowFile flowFile = aSession.get();
         if (null == flowFile) {
@@ -93,7 +96,8 @@ public class MMKeywordMatcher extends AbstractProcessor {
             @Override
             public void process(final InputStream aStream) throws IOException {
 
-                String keywordString = aContext.getProperty(KEYWORDS).getValue();
+                String keywordString =
+                        aContext.getProperty(KEYWORDS).getValue();
                 List<String> keywords = new ArrayList<String>();
                 if (!keywordString.trim().isEmpty()) {
                     keywords = Arrays.asList(keywordString.split(","));
@@ -105,19 +109,23 @@ public class MMKeywordMatcher extends AbstractProcessor {
                 Gson gson = new Gson();
                 String[] lemmas = gson.fromJson(message, String[].class);
 
-                for (String lemma: lemmas) {
+                for (String lemma : lemmas) {
                     if (keywords.contains(lemma)) {
                         getLogger().warn("KEYWORD MATCHED!!!");
                         FlowFile result = aSession.create();
-                        result = aSession.write(result, new OutputStreamCallback() {
+                        result = aSession.write(result,
+                                new OutputStreamCallback() {
 
-                            @Override
-                            public void process(final OutputStream aStream) throws IOException {
-                                getLogger().info("Sent a tweet with a keyword: " + message);
-                                aStream.write(message.getBytes());
-                            }
-
-                        });
+                                    @Override
+                                    public void process(
+                                            final OutputStream aStream)
+                                            throws IOException {
+                                        getLogger().info(
+                                                "Sent a tweet with a keyword: "
+                                                        + message);
+                                        aStream.write(message.getBytes());
+                                    }
+                                });
                         aSession.transfer(result, REL_SUCCESS);
                         break;
                     }
@@ -162,7 +170,6 @@ public class MMKeywordMatcher extends AbstractProcessor {
     public List<PropertyDescriptor> getProperties() {
         return properties;
     }
-
 
     /**
      * Setter.

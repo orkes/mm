@@ -1,3 +1,4 @@
-processors.MMTwitterSource
-processors.MMTokenizerLemmatizer
-processors.MMKeywordMatcher
+processors.MmTwitterSource
+processors.MmTokenizerLemmatizer
+processors.MmKeywordMatcher
+processors.MmTwitterReceiver

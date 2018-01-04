@@ -9,8 +9,8 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 
-//import twitter4j.JSONException;
-//import twitter4j.JSONObject;
+// import twitter4j.JSONException;
+// import twitter4j.JSONObject;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -35,7 +35,7 @@ public class TwitterHBCTest {
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
         StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
         // add some track terms
-        //endpoint.followings(Lists.newArrayList(119367092L, 1L));
+        // endpoint.followings(Lists.newArrayList(119367092L, 1L));
         endpoint.trackTerms(Lists.newArrayList("news", "text"));
 
         Authentication auth = new OAuth1("w005HES0qRC80dSzISfcXWuYA",
@@ -45,12 +45,9 @@ public class TwitterHBCTest {
         // Authentication auth = new BasicAuth(username, password);
 
         // Create a new BasicClient. By default gzip is enabled.
-        Client client = new ClientBuilder()
-                .hosts(Constants.STREAM_HOST)
-                .endpoint(endpoint)
-                .authentication(auth)
-                .processor(new StringDelimitedProcessor(queue))
-                .build();
+        Client client = new ClientBuilder().hosts(Constants.STREAM_HOST)
+                .endpoint(endpoint).authentication(auth)
+                .processor(new StringDelimitedProcessor(queue)).build();
 
         // Establish a connection
         client.connect();
@@ -63,7 +60,7 @@ public class TwitterHBCTest {
             JSONObject jsonObject = (JSONObject) jsonParser.parse(msg);
             // get a String from the JSON object
 
-            String text = (String) jsonObject.get("text");
+            String text = (String) jsonObject.get("user.name");
             System.out.println(text);
         }
 

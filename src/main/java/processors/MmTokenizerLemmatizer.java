@@ -1,5 +1,7 @@
 package processors;
 
+import com.google.gson.Gson;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,6 +12,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import opennlp.tools.lemmatizer.DictionaryLemmatizer;
+import opennlp.tools.postag.POSModel;
+import opennlp.tools.postag.POSTaggerME;
+import opennlp.tools.tokenize.Tokenizer;
+import opennlp.tools.tokenize.TokenizerME;
+import opennlp.tools.tokenize.TokenizerModel;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.nifi.annotation.behavior.InputRequirement;
@@ -27,28 +36,19 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
 import org.apache.nifi.processor.io.OutputStreamCallback;
 
-import com.google.gson.Gson;
-
-import opennlp.tools.lemmatizer.DictionaryLemmatizer;
-import opennlp.tools.postag.POSModel;
-import opennlp.tools.postag.POSTaggerME;
-import opennlp.tools.tokenize.Tokenizer;
-import opennlp.tools.tokenize.TokenizerME;
-import opennlp.tools.tokenize.TokenizerModel;
-
-
 /**
  * A tokenizer/lemmatizer class.
  */
 @InputRequirement(Requirement.INPUT_REQUIRED)
 @Tags({"MM", "tokenize"})
 @CapabilityDescription("This processor lemmatizes tweets.")
-public class MMTokenizerLemmatizer extends AbstractProcessor {
+public class MmTokenizerLemmatizer extends AbstractProcessor {
 
     /** Relationship "Success". */
     public static final Relationship REL_SUCCESS = new Relationship.Builder()
             .name("success")
-            .description("This is where flow files are sent if the processor execution went well.")
+            .description(
+                    "This is where flow files are sent if the processor execution went well.")
             .build();
 
     /** List of processor properties. */
@@ -57,13 +57,13 @@ public class MMTokenizerLemmatizer extends AbstractProcessor {
     /** List of processor relationships. */
     private Set<Relationship> relationships;
 
-    /** Tokenization model */
+    /** Tokenization model. */
     private Tokenizer tokenizer;
 
-    /** POS tagging model */
+    /** POS tagging model. */
     private POSTaggerME posTagger;
 
-    /** Lemmatization model */
+    /** Lemmatization model. */
     private DictionaryLemmatizer lemmatizer;
 
     /**
@@ -80,19 +80,19 @@ public class MMTokenizerLemmatizer extends AbstractProcessor {
         File lemmaModelFile = getFile("en-lemmatizer.txt");
         File posModelFile = getFile("en-pos-maxent.bin");
         try {
-            //load the tokenization model
+            // load the tokenization model
             InputStream is = new FileInputStream(tokenModelFile);
             TokenizerModel model = new TokenizerModel(is);
             tokenizer = new TokenizerME(model);
             is.close();
 
-            //load the POS tagging model
+            // load the POS tagging model
             is = new FileInputStream(posModelFile);
             POSModel posModel = new POSModel(is);
             // initializing the parts-of-speech tagger with model
             posTagger = new POSTaggerME(posModel);
 
-            //load the lemmatization model
+            // load the lemmatization model
             is = new FileInputStream(lemmaModelFile);
             lemmatizer = new DictionaryLemmatizer(is);
             is.close();
@@ -111,8 +111,8 @@ public class MMTokenizerLemmatizer extends AbstractProcessor {
      * {@inheritDoc}
      */
     @Override
-    public void onTrigger(final ProcessContext aContext, final ProcessSession aSession)
-            throws ProcessException {
+    public void onTrigger(final ProcessContext aContext,
+            final ProcessSession aSession) throws ProcessException {
 
         FlowFile flowFile = aSession.get();
         if (null == flowFile) {
@@ -124,14 +124,14 @@ public class MMTokenizerLemmatizer extends AbstractProcessor {
             @Override
             public void process(final InputStream aStream) throws IOException {
 
-                //tokenize
+                // tokenize
                 String message = new String(IOUtils.toByteArray(aStream));
-                String tokens[] = tokenizer.tokenize(message);
+                String[] tokens = tokenizer.tokenize(message);
 
-                //tag POSs
-                String tags[] = posTagger.tag(tokens);
+                // tag POSs
+                String[] tags = posTagger.tag(tokens);
 
-                //lemmatize
+                // lemmatize
                 String[] lemmas = lemmatizer.lemmatize(tokens, tags);
 
                 Gson gson = new Gson();
@@ -140,19 +140,20 @@ public class MMTokenizerLemmatizer extends AbstractProcessor {
                 getLogger().info(jsonLemmas);
 
                 FlowFile result = aSession.create(flowFile);
-                //result = aSession.putAttribute(result, "parent",
-                //        flowFile.getAttribute(CoreAttributes.UUID.key()));
+                // result = aSession.putAttribute(result, "parent",
+                // flowFile.getAttribute(CoreAttributes.UUID.key()));
                 result = aSession.write(result, new OutputStreamCallback() {
 
                     @Override
-                    public void process(final OutputStream aStream) throws IOException {
+                    public void process(final OutputStream aStream)
+                            throws IOException {
                         aStream.write(jsonLemmas.getBytes());
                     }
                 });
-                //result = aSession.putAttribute(result, "received-for-detection",
-                //        timestamp);
+                // result = aSession.putAttribute(result,
+                // "received-for-detection",
+                // timestamp);
                 aSession.transfer(result, REL_SUCCESS);
-
 
             }
         });
@@ -195,7 +196,6 @@ public class MMTokenizerLemmatizer extends AbstractProcessor {
         return properties;
     }
 
-
     /**
      * Setter.
      *
@@ -211,6 +211,5 @@ public class MMTokenizerLemmatizer extends AbstractProcessor {
         File file = new File(classLoader.getResource(fileName).getFile());
         return file;
     }
-
 
 }

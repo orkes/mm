@@ -1,5 +1,8 @@
-/home/orkes/workspace/NiFiTwitterAPI/src/main/java/processors/MMTokenizerLemmatizer.java
-/home/orkes/workspace/NiFiTwitterAPI/src/main/java/test/OpenNLPTest.java
-/home/orkes/workspace/NiFiTwitterAPI/src/main/java/test/TwitterHBCTest.java
-/home/orkes/workspace/NiFiTwitterAPI/src/main/java/processors/MMKeywordMatcher.java
-/home/orkes/workspace/NiFiTwitterAPI/src/main/java/processors/MMTwitterSource.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmTwitterReceiver.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\test\OpenNLPTest.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmKeywordMatcher.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\test\TwitterHBCTest.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmTwitterListener.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmTwitterSource.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmTokenizerLemmatizer.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\test\Twitter4JTest.java
