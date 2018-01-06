@@ -3,3 +3,4 @@ processors.MmTokenizerLemmatizer
 processors.MmKeywordMatcher
 processors.MmTwitterReceiver
 processors.MmKeywordSearcher
+processors.MmLuceneQueryProcessor

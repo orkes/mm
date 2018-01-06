@@ -1,10 +1,6 @@
 package processors;
 
-import com.google.gson.Gson;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -27,10 +22,10 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
+
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
@@ -43,16 +38,14 @@ import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.ProcessorInitializationContext;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
-import org.apache.nifi.processor.io.InputStreamCallback;
-import org.apache.nifi.processor.io.OutputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
 
 /**
- * A keyword matcher class.
+ * A Lucene-based keyword searcher class.
  */
 @InputRequirement(Requirement.INPUT_REQUIRED)
 @Tags({"MM", "keyword", "search"})
-@CapabilityDescription("This processor matches keywords/phrases in tweets.")
+@CapabilityDescription("This processor searches for keywords/phrases in tweets.")
 public class MmKeywordSearcher extends AbstractProcessor {
 
     /** Relationship "Success". */
@@ -139,9 +132,8 @@ public class MmKeywordSearcher extends AbstractProcessor {
                 // 2. query
                 boolean hit = false;
                 for (String keyword : keywords) {
-                    // String querystr = args.length > 0 ? args[0] : "lucene";
 
-                    // the "title" arg specifies the default field to use
+                    // the "Text" arg specifies the default field to use
                     // when no field is explicitly specified in the query.
                     Query q = new QueryParser("Text", analyzer)
                             .parse("'" + keyword + "'");
@@ -154,9 +146,8 @@ public class MmKeywordSearcher extends AbstractProcessor {
                     TopDocs docs = searcher.search(q, hitsPerPage);
 
                     if (docs.totalHits > 0) {
-                        getLogger().info("Hits found!");
+                        // getLogger().info("Hits found!");
                         hit = true;
-                        // aSession.putAttribute(flowFile, "Hit", "true");
                     }
                     // reader can only be closed when there
                     // is no need to access the documents any more.

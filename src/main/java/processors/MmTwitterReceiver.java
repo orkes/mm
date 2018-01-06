@@ -13,6 +13,7 @@ import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.behavior.TriggerSerially;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
+import org.apache.nifi.annotation.lifecycle.OnUnscheduled;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.processor.AbstractProcessor;
@@ -114,16 +115,7 @@ public class MmTwitterReceiver extends AbstractProcessor {
                         + aStatus.getText());
 
                 FlowFile flowFile = aSession.create();
-                // flowFile = aSession.write(flowFile, new
-                // OutputStreamCallback() {
-                //
-                // @Override
-                // public void process(final OutputStream aStream)
-                // throws IOException {
-                //
-                // aStream.write(aStatus.getText().getBytes());
-                // }
-                // });
+
                 aSession.putAttribute(flowFile, "Text", aStatus.getText());
                 aSession.putAttribute(flowFile, "UserId",
                         String.valueOf(aStatus.getUser().getId()));
@@ -173,7 +165,14 @@ public class MmTwitterReceiver extends AbstractProcessor {
         }
     }
 
-    // TODO onStop twitterStream.cleanUp();
+    /**
+     * Any cleanup code appears here.
+     */
+    @OnUnscheduled
+    public void cleanUp() {
+        twitterStream.cleanUp();
+        twitterStream.shutdown();
+    }
 
     /**
      * {@inheritDoc}
