@@ -1,9 +1,5 @@
 C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmTwitterReceiver.java
-C:\Users\Rustem\eclipse-workspace\mm\src\main\java\test\OpenNLPTest.java
-C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmKeywordMatcher.java
 C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmKeywordSearcher.java
-C:\Users\Rustem\eclipse-workspace\mm\src\main\java\test\TwitterHBCTest.java
 C:\Users\Rustem\eclipse-workspace\mm\src\main\java\test\LuceneTest.java
-C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmTwitterSource.java
-C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmTokenizerLemmatizer.java
+C:\Users\Rustem\eclipse-workspace\mm\src\main\java\processors\MmLuceneQueryProcessor.java
 C:\Users\Rustem\eclipse-workspace\mm\src\main\java\test\Twitter4JTest.java

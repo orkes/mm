@@ -1,14 +1,7 @@
-test\OpenNLPTest.class
+processors\MmLuceneQueryProcessor.class
 processors\MmTwitterReceiver.class
 test\LuceneTest.class
 test\Twitter4JTest.class
-test\TwitterHBCTest.class
 processors\MmKeywordSearcher.class
-processors\MmTwitterSource$1.class
-processors\MmKeywordMatcher$1.class
-processors\MmTwitterSource.class
-processors\MmTokenizerLemmatizer.class
-processors\MmKeywordMatcher$1$1.class
-processors\MmKeywordMatcher.class
 processors\MmTwitterReceiver$1.class
 test\Twitter4JTest$1.class
