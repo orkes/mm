@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
+import org.apache.nifi.annotation.behavior.TriggerSerially;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.components.PropertyDescriptor;
@@ -37,6 +38,7 @@ import twitter4j.conf.ConfigurationBuilder;
 @InputRequirement(Requirement.INPUT_FORBIDDEN)
 @Tags({"twitter", "retrieve", "source", "MM"})
 @CapabilityDescription("This processor retrieves tweets from specific users.")
+@TriggerSerially
 public class MmTwitterReceiver extends AbstractProcessor {
 
     /** Processor property. */
@@ -93,9 +95,6 @@ public class MmTwitterReceiver extends AbstractProcessor {
 
         twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
 
-        StatusListener listener = new MmTwitterListener();
-        twitterStream.addListener(listener);
-
         getLogger().info("Initialisation complete!");
 
     }
@@ -107,104 +106,74 @@ public class MmTwitterReceiver extends AbstractProcessor {
     public void onTrigger(final ProcessContext aContext,
             final ProcessSession aSession) throws ProcessException {
 
+        StatusListener listener = new StatusListener() {
+
+            @Override
+            public void onStatus(Status aStatus) {
+                getLogger().info(aStatus.getUser().getName() + " : "
+                        + aStatus.getText());
+
+                FlowFile flowFile = aSession.create();
+                // flowFile = aSession.write(flowFile, new
+                // OutputStreamCallback() {
+                //
+                // @Override
+                // public void process(final OutputStream aStream)
+                // throws IOException {
+                //
+                // aStream.write(aStatus.getText().getBytes());
+                // }
+                // });
+                aSession.putAttribute(flowFile, "Text", aStatus.getText());
+                aSession.putAttribute(flowFile, "UserId",
+                        String.valueOf(aStatus.getUser().getId()));
+                aSession.putAttribute(flowFile, "FullStatus",
+                        aStatus.toString());
+                aSession.transfer(flowFile, REL_SUCCESS);
+                aSession.commit();
+                getLogger().info(
+                        "Received and sent a status: " + aStatus.toString());
+            }
+
+            @Override
+            public void onDeletionNotice(
+                    StatusDeletionNotice statusDeletionNotice) {}
+
+            @Override
+            public void onTrackLimitationNotice(int numberOfLimitedStatuses) {}
+
+            @Override
+            public void onException(Exception ex) {
+                getLogger().error(ex.getMessage());
+            }
+
+            @Override
+            public void onScrubGeo(long aArg0, long aArg1) {}
+
+            @Override
+            public void onStallWarning(StallWarning aArg0) {}
+        };
+        twitterStream.addListener(listener);
+
         String stringIds = aContext.getProperty(USER_IDS).getValue();
         if (!stringIds.trim().isEmpty()) {
 
             List<String> ids = Arrays.asList(stringIds.split(","));
+
             List<Long> longIds = ids.stream().map(Long::parseLong)
                     .collect(Collectors.toList());
+
             long[] followings = longIds.stream().mapToLong(i -> i).toArray();
+
             FilterQuery query = new FilterQuery();
             query.follow(followings);
 
             twitterStream.filter(query);
+            // twitterStream.sample();
         }
-
-        // BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
-        // StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
-        //
-        // // add some track terms
-        // String stringIds = aContext.getProperty(USER_IDS).getValue();
-        // if (!stringIds.trim().isEmpty()) {
-        //
-        // List<String> ids = Arrays.asList(stringIds.split(","));
-        // List<Long> longIds = ids.stream().map(Long::parseLong)
-        // .collect(Collectors.toList());
-        // endpoint.followings(longIds);
-        // }
-        //
-        // Authentication auth = new OAuth1("w005HES0qRC80dSzISfcXWuYA",
-        // "WWmbn1USHfGUbFYqGEoP1Zo771MZT8YQD9aYhCCQW2i5uEpjmJ",
-        // "119367092-XTMgigkWeuTOrnP7N4WkKl3jsZtbuu5o7woFerpJ",
-        // "mDeunQONPSMhqYwGcLdYZZiTq28TorWFNCeXK8ZNJzExh");
-        // // Authentication auth = new BasicAuth(username, password);
-        //
-        // // Create a new BasicClient. By default gzip is enabled.
-        // if (null == client) {
-        // client = new ClientBuilder().hosts(Constants.STREAM_HOST)
-        // .endpoint(endpoint).connectionTimeout(60000)
-        // .authentication(auth)
-        // .processor(new StringDelimitedProcessor(queue)).build();
-        // // Establish a connection
-        // client.connect();
-        // getLogger().info("Client created and connected");
-        // } else {
-        // client.reconnect();
-        // getLogger().info("Client reconnected");
-        // }
-        //
-        // try {
-        // while (true) {
-        //
-        // String msg = queue.take();
-        //
-        // getLogger().info(msg);
-        //
-        // final JSONObjectParser parser = new JSONObjectParser(); //
-        // Gson..createParser(new
-        // // StringReader
-        // // parser.
-        //
-        // JSONParser jsonParser = new JSONParser();
-        // JSONObject jsonObject = (JSONObject) jsonParser.parse(msg);
-        // // get a String from the JSON object
-        //
-        // // ignore deleted tweets
-        // if (!jsonObject.containsKey("delete")) {
-        //
-        // String text = (String) jsonObject.get("text");
-        // // String user = (String) jsonObject.get("user").;
-        //
-        // getLogger().info(text);
-        //
-        // FlowFile flowFile = aSession.create();
-        // flowFile = aSession.write(flowFile,
-        // new OutputStreamCallback() {
-        //
-        // @Override
-        // public void process(final OutputStream aStream)
-        // throws IOException {
-        //
-        // aStream.write(text.getBytes());
-        // }
-        // });
-        // aSession.putAttribute(flowFile, "TwitterAccount", text);
-        // // aSession.putAttribute(flowFile, "Tweet", user);
-        // aSession.transfer(flowFile, REL_SUCCESS);
-        // aSession.commit();
-        // }
-        // }
-        // } catch (InterruptedException e) {
-        // getLogger().error(e.getMessage());
-        // } catch (ParseException e) {
-        // getLogger().error(e.getMessage());
-        // } finally {
-        // client.stop();
-        // getLogger().info("Stopped the connection");
-        // }
-
-        // client.stop();
     }
+
+    // TODO onStop twitterStream.cleanUp();
 
     /**
      * {@inheritDoc}

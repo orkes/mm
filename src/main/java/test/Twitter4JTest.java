@@ -70,6 +70,7 @@ public class Twitter4JTest {
         twitterStream.addListener(listener);
 
         twitterStream.filter(query);
+        // twitterStream.sample();
     }
 
 }

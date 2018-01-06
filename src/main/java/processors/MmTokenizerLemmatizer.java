@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +19,6 @@ import opennlp.tools.tokenize.Tokenizer;
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
@@ -33,8 +31,6 @@ import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.ProcessorInitializationContext;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
-import org.apache.nifi.processor.io.InputStreamCallback;
-import org.apache.nifi.processor.io.OutputStreamCallback;
 
 /**
  * A tokenizer/lemmatizer class.
@@ -119,47 +115,94 @@ public class MmTokenizerLemmatizer extends AbstractProcessor {
             return;
         }
 
-        aSession.read(flowFile, new InputStreamCallback() {
+        String text = flowFile.getAttribute("Text");
+        if (!text.isEmpty()) {
 
-            @Override
-            public void process(final InputStream aStream) throws IOException {
-
-                // tokenize
-                String message = new String(IOUtils.toByteArray(aStream));
-                String[] tokens = tokenizer.tokenize(message);
-
-                // tag POSs
-                String[] tags = posTagger.tag(tokens);
-
-                // lemmatize
-                String[] lemmas = lemmatizer.lemmatize(tokens, tags);
-
-                Gson gson = new Gson();
-                String jsonLemmas = gson.toJson(lemmas);
-
-                getLogger().info(jsonLemmas);
-
-                FlowFile result = aSession.create(flowFile);
-                // result = aSession.putAttribute(result, "parent",
-                // flowFile.getAttribute(CoreAttributes.UUID.key()));
-                result = aSession.write(result, new OutputStreamCallback() {
-
-                    @Override
-                    public void process(final OutputStream aStream)
-                            throws IOException {
-                        aStream.write(jsonLemmas.getBytes());
-                    }
-                });
-                // result = aSession.putAttribute(result,
-                // "received-for-detection",
-                // timestamp);
-                aSession.transfer(result, REL_SUCCESS);
-
+            getLogger().info("Received string: " + text);
+            String[] tokens = tokenizer.tokenize(text);
+            for (String token : tokens) {
+                getLogger().info("Token: " + token);
             }
-        });
 
-        aSession.remove(flowFile);
-        aSession.commit();
+            // tag POSs
+            String[] tags = posTagger.tag(tokens);
+            for (String tag : tags) {
+                getLogger().info("Tag: " + tag);
+            }
+
+            // lemmatize
+            String[] lemmas = lemmatizer.lemmatize(tokens, tags);
+            for (String lemma : lemmas) {
+                getLogger().info("Lemma: " + lemma);
+            }
+
+            Gson gson = new Gson();
+            String jsonLemmas = gson.toJson(lemmas);
+
+            getLogger().info(jsonLemmas);
+
+            aSession.putAttribute(flowFile, "Lemmas", jsonLemmas);
+
+            //
+            // FlowFile result = aSession.create(flowFile);
+            // // result = aSession.putAttribute(result, "parent",
+            // // flowFile.getAttribute(CoreAttributes.UUID.key()));
+            // result = aSession.write(result, new OutputStreamCallback() {
+            //
+            // @Override
+            // public void process(final OutputStream aStream)
+            // throws IOException {
+            // aStream.write(jsonLemmas.getBytes());
+            // }
+            // });
+            // // result = aSession.putAttribute(result,
+            // // "received-for-detection",
+            // // timestamp);
+            aSession.transfer(flowFile, REL_SUCCESS);
+
+            // aSession.read(flowFile, new InputStreamCallback() {
+            //
+            // @Override
+            // public void process(final InputStream aStream) throws IOException
+            // {
+            //
+            // // tokenize
+            // String message = new String(IOUtils.toByteArray(aStream));
+            // String[] tokens = tokenizer.tokenize(message);
+            //
+            // // tag POSs
+            // String[] tags = posTagger.tag(tokens);
+            //
+            // // lemmatize
+            // String[] lemmas = lemmatizer.lemmatize(tokens, tags);
+            //
+            // Gson gson = new Gson();
+            // String jsonLemmas = gson.toJson(lemmas);
+            //
+            // getLogger().info(jsonLemmas);
+            //
+            // FlowFile result = aSession.create(flowFile);
+            // // result = aSession.putAttribute(result, "parent",
+            // // flowFile.getAttribute(CoreAttributes.UUID.key()));
+            // result = aSession.write(result, new OutputStreamCallback() {
+            //
+            // @Override
+            // public void process(final OutputStream aStream)
+            // throws IOException {
+            // aStream.write(jsonLemmas.getBytes());
+            // }
+            // });
+            // // result = aSession.putAttribute(result,
+            // // "received-for-detection",
+            // // timestamp);
+            // aSession.transfer(result, REL_SUCCESS);
+            //
+            // }
+            // });
+
+            aSession.commit();
+            // aSession.remove(flowFile);
+        }
     }
 
     /**
