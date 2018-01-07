@@ -1,6 +1,9 @@
 package test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import twitter4j.FilterQuery;
 import twitter4j.StallWarning;
@@ -62,7 +65,17 @@ public class Twitter4JTest {
                         "mDeunQONPSMhqYwGcLdYZZiTq28TorWFNCeXK8ZNJzExh");
 
         FilterQuery query = new FilterQuery();
-        long[] followings = {1L, 119367092L};
+
+        List<String> ids = Arrays.asList(
+                "119367092,69779983,1429602151,2904107388,69779983,1429602151,2904107388\r\n"
+                        .replaceAll("(\\r|\\n|\\r\\n)", "").split(","));
+
+        List<Long> longIds =
+                ids.stream().map(Long::parseLong).collect(Collectors.toList());
+
+        long[] followings = longIds.stream().mapToLong(i -> i).toArray();
+
+        // long[] followings = {1L, 119367092L};
         query.follow(followings);
 
         TwitterStream twitterStream =

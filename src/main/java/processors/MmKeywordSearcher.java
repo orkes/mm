@@ -84,7 +84,8 @@ public class MmKeywordSearcher extends AbstractProcessor {
         supDescriptors.add(KEYWORDS);
         setProperties(Collections.unmodifiableList(supDescriptors));
 
-        getLogger().info("Initialisation complete!");
+        getLogger()
+                .info(this.getClass().getName() + ": Initialisation complete!");
 
     }
 

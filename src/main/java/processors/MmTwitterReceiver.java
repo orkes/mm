@@ -96,7 +96,8 @@ public class MmTwitterReceiver extends AbstractProcessor {
 
         twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
 
-        getLogger().info("Initialisation complete!");
+        getLogger()
+                .info(this.getClass().getName() + ": Initialisation complete!");
 
     }
 
@@ -148,15 +149,12 @@ public class MmTwitterReceiver extends AbstractProcessor {
         twitterStream.addListener(listener);
 
         String stringIds = aContext.getProperty(USER_IDS).getValue();
-        if (!stringIds.trim().isEmpty()) {
+        if (!stringIds.replaceAll("(\\r|\\n|\\r\\n)", "").trim().isEmpty()) {
 
             List<String> ids = Arrays.asList(stringIds.split(","));
-
             List<Long> longIds = ids.stream().map(Long::parseLong)
                     .collect(Collectors.toList());
-
             long[] followings = longIds.stream().mapToLong(i -> i).toArray();
-
             FilterQuery query = new FilterQuery();
             query.follow(followings);
 

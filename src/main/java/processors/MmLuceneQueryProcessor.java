@@ -83,7 +83,8 @@ public class MmLuceneQueryProcessor extends AbstractProcessor {
         supDescriptors.add(QUERY);
         setProperties(Collections.unmodifiableList(supDescriptors));
 
-        getLogger().info("Initialisation complete!");
+        getLogger()
+                .info(this.getClass().getName() + ": Initialisation complete!");
 
     }
 
