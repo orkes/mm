@@ -122,7 +122,10 @@ public class MmTwitterReceiver extends AbstractProcessor {
             @Override
             public void onStatus(Status aStatus) {
 
-                if (!aStatus.isRetweet() && !buffer.contains(aStatus.getId())) {
+                // some additional filtering on the client side
+                if (aStatus.getInReplyToScreenName().isEmpty()
+                        && !aStatus.isRetweet()
+                        && !buffer.contains(aStatus.getId())) {
 
                     buffer.add(aStatus.getId());
 
