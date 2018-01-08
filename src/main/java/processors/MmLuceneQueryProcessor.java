@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -107,7 +108,7 @@ public class MmLuceneQueryProcessor extends AbstractProcessor {
         if (!text.isEmpty() && !userId.isEmpty()) {
             // 0. Specify the analyzer for tokenizing text.
             // The same analyzer should be used for indexing and searching
-            StandardAnalyzer analyzer = new StandardAnalyzer();
+            KeywordAnalyzer analyzer = new KeywordAnalyzer();
 
             // 1. create the index
             Directory index = new RAMDirectory();

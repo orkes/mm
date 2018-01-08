@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.buffer.CircularFifoBuffer;
+
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.behavior.TriggerSerially;
@@ -70,6 +72,11 @@ public class MmTwitterReceiver extends AbstractProcessor {
     private TwitterStream twitterStream;
 
     /**
+     * A circular buffer to keep of track status IDs and omit duplicates.
+     */
+    private CircularFifoBuffer buffer;
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -96,6 +103,8 @@ public class MmTwitterReceiver extends AbstractProcessor {
 
         twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
 
+        buffer = new CircularFifoBuffer(100);
+
         getLogger()
                 .info(this.getClass().getName() + ": Initialisation complete!");
 
@@ -112,28 +121,39 @@ public class MmTwitterReceiver extends AbstractProcessor {
 
             @Override
             public void onStatus(Status aStatus) {
-                getLogger().info(aStatus.getUser().getName() + " : "
-                        + aStatus.getText());
 
-                FlowFile flowFile = aSession.create();
+                if (!aStatus.isRetweet() && !buffer.contains(aStatus.getId())) {
 
-                // parse Twitter status into a flowfile
-                aSession.putAttribute(flowFile, "Text", aStatus.getText());
-                aSession.putAttribute(flowFile, "UserId",
-                        String.valueOf(aStatus.getUser().getId()));
-                aSession.putAttribute(flowFile, "UserName",
-                        aStatus.getUser().getName());
-                aSession.putAttribute(flowFile, "UserScreenName",
-                        aStatus.getUser().getScreenName());
-                aSession.putAttribute(flowFile, "UserURL",
-                        aStatus.getUser().getURL());
-                aSession.putAttribute(flowFile, "FullStatus",
-                        aStatus.toString());
+                    buffer.add(aStatus.getId());
 
-                aSession.transfer(flowFile, REL_SUCCESS);
-                aSession.commit();
-                getLogger().info(
-                        "Received and sent a status: " + aStatus.toString());
+                    getLogger().info(aStatus.getUser().getName() + " : "
+                            + aStatus.getText());
+
+                    FlowFile flowFile = aSession.create();
+
+                    // parse Twitter status into a flowfile
+                    aSession.putAttribute(flowFile, "Text", aStatus.getText());
+                    aSession.putAttribute(flowFile, "UserId",
+                            String.valueOf(aStatus.getUser().getId()));
+                    aSession.putAttribute(flowFile, "UserName",
+                            aStatus.getUser().getName());
+                    aSession.putAttribute(flowFile, "UserScreenName",
+                            aStatus.getUser().getScreenName());
+                    aSession.putAttribute(flowFile, "UserURL",
+                            aStatus.getUser().getURL());
+                    aSession.putAttribute(flowFile, "StatusURL",
+                            "https://twitter.com/"
+                                    + aStatus.getUser().getScreenName()
+                                    + "/status/" + aStatus.getId());
+                    aSession.putAttribute(flowFile, "FullStatus",
+                            aStatus.toString());
+
+                    aSession.transfer(flowFile, REL_SUCCESS);
+                    aSession.commit();
+                    getLogger().info("Received and sent a status: "
+                            + aStatus.toString());
+
+                }
             }
 
             @Override

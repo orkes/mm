@@ -139,7 +139,7 @@ public class MmKeywordSearcher extends AbstractProcessor {
                     // the "Text" arg specifies the default field to use
                     // when no field is explicitly specified in the query.
                     Query q = new QueryParser("Text", analyzer)
-                            .parse("'" + keyword + "'");
+                            .parse("\"" + keyword + "\"");
 
                     // 3. search
                     int hitsPerPage = 10;

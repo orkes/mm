@@ -2,6 +2,8 @@ package test;
 
 import java.io.IOException;
 
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -44,13 +46,13 @@ public class LuceneTest {
         addDoc(w, "Managing Gigabytes", "55063554A");
         addDoc(w,
                 "The #Hempcoin team is excited to announce a #HardFork coming January, 2018! The new $THC will be more advanced and comes with many technological upgrades! "
-                        + "More upgrades to announce soon! The best news is yet to come!",
+                        + "More upgrades to announce soon! The good best news is yet to come!",
                 "9900333X");
         addDoc(w, "Lucene for Dummies", "55320055Z");
         w.close();
 
         // 2. query
-        String querystr = args.length > 0 ? args[0] : "'lucene' OR 'best news'";
+        String querystr = args.length > 0 ? args[0] : "\"good news\"~10";
 
         // the "title" arg specifies the default field to use
         // when no field is explicitly specified in the query.
