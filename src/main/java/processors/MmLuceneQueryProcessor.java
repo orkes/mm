@@ -62,9 +62,9 @@ public class MmLuceneQueryProcessor extends AbstractProcessor {
 
     /** Processor property. */
     public static final PropertyDescriptor QUERY =
-            new PropertyDescriptor.Builder().name("Key words").description(
+            new PropertyDescriptor.Builder().name("Lucene query").description(
                     "Specifies comma-separated key words to search for.")
-                    .defaultValue("test").required(true)
+                    .defaultValue("test OR hello").required(true)
                     .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
                     .build();
 

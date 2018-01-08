@@ -117,11 +117,19 @@ public class MmTwitterReceiver extends AbstractProcessor {
 
                 FlowFile flowFile = aSession.create();
 
+                // parse Twitter status into a flowfile
                 aSession.putAttribute(flowFile, "Text", aStatus.getText());
                 aSession.putAttribute(flowFile, "UserId",
                         String.valueOf(aStatus.getUser().getId()));
+                aSession.putAttribute(flowFile, "UserName",
+                        aStatus.getUser().getName());
+                aSession.putAttribute(flowFile, "UserScreenName",
+                        aStatus.getUser().getScreenName());
+                aSession.putAttribute(flowFile, "UserURL",
+                        aStatus.getUser().getURL());
                 aSession.putAttribute(flowFile, "FullStatus",
                         aStatus.toString());
+
                 aSession.transfer(flowFile, REL_SUCCESS);
                 aSession.commit();
                 getLogger().info(

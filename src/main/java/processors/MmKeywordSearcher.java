@@ -12,7 +12,6 @@ import java.util.Set;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -104,12 +103,13 @@ public class MmKeywordSearcher extends AbstractProcessor {
         String keywordString = aContext.getProperty(KEYWORDS).getValue();
         List<String> keywords = new ArrayList<String>();
         if (!keywordString.trim().isEmpty()) {
-            keywords = Arrays.asList(keywordString.split(","));
+            keywords = Arrays.asList(keywordString
+                    .replaceAll("(\\r|\\n|\\r\\n)", "").split(","));
         }
 
-        String userId = flowFile.getAttribute("UserId");
+        // String userId = flowFile.getAttribute("UserId");
         String text = flowFile.getAttribute("Text");
-        if (!text.isEmpty() && !userId.isEmpty()) {
+        if (!text.isEmpty()) {
             // 0. Specify the analyzer for tokenizing text.
             // The same analyzer should be used for indexing and searching
             StandardAnalyzer analyzer = new StandardAnalyzer();
@@ -126,12 +126,14 @@ public class MmKeywordSearcher extends AbstractProcessor {
 
                 // use a string field for userId because we don't want it
                 // tokenized
-                doc.add(new StringField("UserId", userId, Field.Store.YES));
+                // doc.add(new StringField("UserId", userId, Field.Store.YES));
+
                 w.addDocument(doc);
                 w.close();
 
                 // 2. query
-                boolean hit = false;
+                // boolean hit = false;
+                List<String> hits = new ArrayList<String>();
                 for (String keyword : keywords) {
 
                     // the "Text" arg specifies the default field to use
@@ -148,13 +150,16 @@ public class MmKeywordSearcher extends AbstractProcessor {
 
                     if (docs.totalHits > 0) {
                         // getLogger().info("Hits found!");
-                        hit = true;
+                        // hit = true;
+                        hits.add(keyword);
                     }
                     // reader can only be closed when there
                     // is no need to access the documents any more.
                     reader.close();
                 }
-                if (hit) {
+                if (!hits.isEmpty()) {
+                    aSession.putAttribute(flowFile, "Keywords",
+                            hits.toString());
                     aSession.transfer(flowFile, REL_SUCCESS);
                     getLogger()
                             .info("Flowfile with a keyword is sent forward!");

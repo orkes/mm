@@ -67,7 +67,7 @@ public class Twitter4JTest {
         FilterQuery query = new FilterQuery();
 
         List<String> ids = Arrays.asList(
-                "119367092,69779983,1429602151,2904107388,69779983,1429602151,2904107388\r\n"
+                "119367092,69779983,1429602151,2904107388,69779983,1429602151,2904107388"
                         .replaceAll("(\\r|\\n|\\r\\n)", "").split(","));
 
         List<Long> longIds =
