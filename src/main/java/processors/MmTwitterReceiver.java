@@ -122,15 +122,9 @@ public class MmTwitterReceiver extends AbstractProcessor {
             @Override
             public void onStatus(Status aStatus) {
 
-                // some additional filtering on the client side
-                if (aStatus.getInReplyToScreenName().isEmpty()
-                        && !aStatus.isRetweet()
-                        && !buffer.contains(aStatus.getId())) {
+                if (filterStatus(aStatus)) {
 
                     buffer.add(aStatus.getId());
-
-                    getLogger().info(aStatus.getUser().getName() + " : "
-                            + aStatus.getText());
 
                     FlowFile flowFile = aSession.create();
 
@@ -153,9 +147,8 @@ public class MmTwitterReceiver extends AbstractProcessor {
 
                     aSession.transfer(flowFile, REL_SUCCESS);
                     aSession.commit();
-                    getLogger().info("Received and sent a status: "
+                    getLogger().info("Received and sent forward a status: "
                             + aStatus.toString());
-
                 }
             }
 
@@ -192,6 +185,28 @@ public class MmTwitterReceiver extends AbstractProcessor {
             twitterStream.filter(query);
             // twitterStream.sample();
         }
+    }
+
+    /**
+     * Filters out the noice - i.e. retweets, replies, quotes, etc.
+     * 
+     * @param aStatus incoming tweet
+     * @return true - if it is a relevant primary tweet, otherwise - false
+     */
+    public boolean filterStatus(Status aStatus) {
+
+        if (aStatus.getInReplyToStatusId() > 0
+                || aStatus.getInReplyToUserId() > 0
+                || aStatus.getInReplyToScreenName() != null
+                || aStatus.getQuotedStatus() != null
+                || aStatus.getQuotedStatusId() > 0 || aStatus.isRetweet()
+                || buffer.contains(aStatus.getId())) {
+            getLogger().info("Ignoring 'noisy' tweet: "
+                    + aStatus.getUser().getScreenName() + " - "
+                    + aStatus.getText());
+            return false;
+        }
+        return true;
     }
 
     /**
